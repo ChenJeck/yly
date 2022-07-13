@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>养老院网站注册</title>
+	<link rel="shortcut icon" href="images/favicon.ico"/><!--加图标-->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
+     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <link rel="stylesheet" type="text/css" href="css/reset.css"/>
+   	<link rel="stylesheet" type="text/css" href="css/main.css"/ media="screen and (min-width:481px)">
+	<link rel="stylesheet" type="text/css" href="css/main480.css" media="screen and (max-width:480px)"/>
+    <script type="text/javascript" src="js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/jquery.validate.min.js"></script>
+    <script type="text/javascript" src="plugins/dialog.js"></script>
+</head>
+<body>
+<div id="background"></div><!--背景层-->
+<div class="zhuce_body">
+	<div class="logo_login"><a href="index.php"><img src="images/logo1.png" border="0" title="温医养老院"></a></div>
+    <div class="zhuce_kong ">
+    	<div class="zc">
+        	<div class="bj_left">
+            <h3>欢迎注册</h3>
+       	  	  <form  id="formZ" name="formZ" action="#" method="post">
+                <input type="text" id="username" name="username" class="kuang_txt phone" placeholder="请输入常用手机号">
+                <input type="text" id="email" name="email" class="kuang_txt email" placeholder="请输入常用邮箱">
+                <input type="password" id="password" name="password" class="kuang_txt password" placeholder="请输入密码">
+                <input type="password" id="confirm_password" name="confirm_password" class="kuang_txt password" placeholder="请再确认一次密码">
+               <div>
+               		<input name="security_code" id="security_code" type="text" class="kuang_txt yanzm" placeholder="请输入验证码111"> <input name="btn_code" type="button" id="btn_code" class="btn_code" value="获取验证码">
+               </div>
+                <div>
+               		<input name="autoFlag" id="autoFlag" type="checkbox" checked="checked" value=""><span>已阅读并同意<a href="#" target="_blank"><span class="lan">《XXXXX使用协议》</span></a></span>
+                </div>
+                <input name="btn_zhuce" type="button" id="btn_zhuce" class="btn_zhuce" value="注册">
+                 <a class="toggle_btn" href="login.html" title="登录">立即登录&gt;&gt;</a>
+                <p id="createResult"></p>
+                </form>
+            </div><!--bj_left左框-->
+        	<div class="bj_right">
+            	<p>使用以下账号直接登录</p>
+                <a href="#" class="zhuce_qq" title="QQ注册">QQ注册</a>
+                <a href="#" class="zhuce_wb" title="微博注册">微博注册</a>
+                <a href="#" class="zhuce_wx" title="微信注册">微信注册</a>
+                <p>已有账号？<a href="login.html" title="立即登录">立即登录</a></p>
+          </div><!--bj_right右框-->
+        </div><!--zc注册框-->
+    </div><!--zhuce_kong-->
+</div><!--zhuce_body-->
+<script type="text/javascript"> 
+$().ready(function() {
+	$("#username").focus();
+	$("#username").keyup(function(){
+		$.ajax({
+			type:"get",
+			url:"doUserAction.php?act=check",
+			data:{
+				username:$("#username").val()
+			},
+			dataType:'json',
+			success:function(data){
+				if(data.d==1){
+					$("#createResult").html("已存在该用户名，请更换");
+					$("#createResult").css("color","red");
+					$("#btn_zhuce").attr("disabled","disabled");
+				}
+				if(data.d==2){
+					$("#createResult").html("用户名可用");
+					$("#createResult").css("color","#228B22");
+					$("#btn_zhuce").attr("disabled",false);
+				}
+			},
+			error:function(jqXHR){
+				alert("发生错误"+jqXHR.status);
+			}
+		});
+	});
+	$("#btn_zhuce").click(function(){
+		//先通过button验证表单有效性
+		var flag = $('#formZ').valid();
+    	if(flag){
+    		var d1= dialog({
+				content:'<span class=\'save_start\'>正在注册您的信息。</span>'
+			});
+			$(document).ajaxStart(function(){
+				d1.show();					 
+			});
+			$.ajax({
+				type:"POST",
+				url:"doUserAction.php?act=reg",
+				data:{
+					username:$("#username").val(),
+					email:$("#email").val(),
+					security_code:$("#security_code").val(),
+					password:$("#password").val(),
+					confirm_password:$("#confirm_password").val(),
+					autoFlag:$("#autoFlag").is(':checked')
+					},
+				dataType:"json",
+				success:function(data){
+					if(data.success){
+						d1.close().remove();//关闭中间过度动画
+						var d= dialog({
+							content:'<span class=\'save_success\'>'+data.msg+'</span>'
+						});
+						d.show();
+						setTimeout(function(){
+							d.close().remove();
+							window.location='login.html';
+						},2500);	
+					}
+					else{
+						d1.close().remove();//关闭中间过度动画
+						var d= dialog({
+							content:'<span class=\'save_failed\'>'+data.msg+'</span>',
+							quickClose:true,//点击空白出快速关闭
+						});
+						d.show();
+						setTimeout(function(){
+							d.close().remove();
+						},3000);
+					}
+				},
+				error:function(jqXHR){
+					alert("发生错误:"+jqXHR.status);
+				},
+			});
+		}
+	});
+	//获取验证码
+	$("#btn_code").click(function(){
+		var flag = $('#formZ').valid();
+    	if(flag){
+		$.ajax({
+				type:"POST",
+				url:"doUserAction.php?act=code",
+				data:{
+					username:$("#username").val(),
+					},
+				dataType:"json",
+				success:function(data){
+					if(data.success){
+						var i=60;//60s
+						var time2=setInterval(function(){
+							i--;
+							$("#btn_code").attr("value",i+"秒");
+						},1000);
+						var time1=setTimeout(function(){
+							$("#btn_code").removeAttr("disabled");
+							$("#btn_code").attr("value","获取验证码");
+							$("#btn_code").css("cursor","pointer");
+							clearInterval(time2);
+						},60000);
+						$("#btn_code").attr("disabled","disabled");
+						$("#btn_code").css("cursor","not-allowed");
+					}else{
+						
+					}
+				},
+				error:function(jqXHR){
+					alert("发生错误:"+jqXHR.status);
+				},
+		});
+		}
+	});
+	
+	$("#formZ").validate({	 	
+	        rules: {
+			    username: {
+                    required: true,
+                    maxlength: 11,
+                    minlength:11,
+                    digits:true 
+                },
+			   password: {
+				    required: true,
+				    minlength: 2
+			   },
+			   confirm_password: {
+				    required: true,
+				    minlength: 2,
+				    equalTo: "#password"
+			   }
+	 		},
+	        messages: 
+	        {
+			      username: {
+                    required: '请输入正确的手机号码',
+                    minlength: '请输入正确的手机号码',
+                    maxlength: '请输入正确的手机号码',
+                    remote: '账号不存在'
+                },
+			   password: {
+				    required: "请输入密码",
+				    minlength: jQuery.format("密码不能小于{0}个字 符")
+			   },
+			   confirm_password: {
+				    required: "请输入确认密码",
+				    minlength: "确认密码不能小于2个字符",
+				    equalTo: "两次输入密码不一致！"
+			   }
+	  		}	
+	   	 });
+});
+
+</script>
+</body>
+</html>
